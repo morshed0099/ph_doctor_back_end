@@ -39,5 +39,6 @@ router.post(
     return userControler.createPatient(req, res, next);
   }
 );
+router.get("/", userControler.getAllUserFromDb);
 
 export const userRouter = router;
