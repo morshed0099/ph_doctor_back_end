@@ -35,7 +35,6 @@ const createAdmin = async (req: any) => {
 };
 const createDoctor = async (req: any) => {
   const file = req.file;
-
   if (file) {
     const uploadCloudinary = (await fileUploader.uploadTocloudinary(
       file
@@ -62,8 +61,40 @@ const createDoctor = async (req: any) => {
   });
   return result;
 };
+const ceatePatient = async (req: any) => {
+  const file = req.file;
+  console.log(req.file);
+
+  if (file) {
+    const uploadCloudinary = (await fileUploader.uploadTocloudinary(
+      file
+    )) as TClodnary;
+    req.body.patient.profilePhoto = uploadCloudinary?.secure_url;
+  }
+
+  const hasPass = await bcrypt.hash(req.body.password, 12);
+
+  const userData = {
+    email: req.body.patient.email as string,
+    name: req.body.patient.name as string,
+    password: hasPass,
+    role: UserRoll.PATIENT,
+  };
+
+  const result = await prisma.$transaction(async (transaction) => {
+    await transaction.user.create({
+      data: userData,
+    });
+    const createPatient = await transaction.patient.create({
+      data: req.body.patient,
+    });
+    return createPatient;
+  });
+  return result;
+};
 
 export const userService = {
   createAdmin,
   createDoctor,
+  ceatePatient,
 };

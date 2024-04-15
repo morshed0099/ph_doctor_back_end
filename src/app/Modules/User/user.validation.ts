@@ -11,22 +11,38 @@ const createUserValidation = z.object({
 });
 
 const createDoctorVlidationSchema = z.object({
-  name: z.string({ required_error: "doctor name is required" }),
-  email: z.string({ required_error: "doctor email is required" }),
-  profilePhoto: z.string().optional(),
-  address: z.string(),
-  registrationNumber: z.string({
-    required_error: "registration number is required",
+  password: z.string({ required_error: "password is requierd" }),
+  doctor: z.object({
+    name: z.string({ required_error: "doctor name is required" }),
+    email: z.string({ required_error: "doctor email is required" }),
+    profilePhoto: z.string().optional(),
+    address: z.string(),
+    registrationNumber: z.string({
+      required_error: "registration number is required",
+    }),
+    experience: z.number({ required_error: "experience is required" }),
+    gender: z.enum([Gender.FEMALE, Gender.MALE]),
+    appoinmentFee: z.number({ required_error: "appoinmentFee is required" }),
+    currentWorkingPlace: z.string({
+      required_error: "working place is missing",
+    }),
+    qualification: z.string({ required_error: "qualification is required" }),
+    designation: z.string({ required_error: "designation is required" }),
   }),
-  experience: z.number({ required_error: "experience is required" }),
-  gender: z.enum([Gender.FEMALE, Gender.MALE]),
-  appoinmentFee: z.number({ required_error: "appoinmentFee is required" }),
-  currentWorkingPlace: z.string({ required_error: "working place is missing" }),
-  qualification: z.string({ required_error: "qualification is required" }),
-  designation: z.string({ required_error: "designation is required" }),
+});
+
+const createPatientValidationSchema = z.object({
+  password: z.string({ required_error: "password is required" }),
+  patient: z.object({
+    name: z.string({ required_error: "patient name is required" }),
+    email: z.string({ required_error: "patient email is required" }),
+    profilePhoto: z.string().optional(),
+    address: z.string({ required_error: "patiet address is required" }),
+  }),
 });
 
 export const validationUser = {
   createUserValidation,
   createDoctorVlidationSchema,
+  createPatientValidationSchema,
 };
