@@ -3,6 +3,7 @@ import { helpers } from "../../../helpers/paginationClaculte";
 import prisma from "../../shered/prisma";
 
 const admicRetive = async (payload: any, option: any) => {
+  console.log(payload, option);
   const { page, limit, skip, sortBy, sortOrder } =
     helpers.calculatePaginationOption(option);
   const { search, ...restData } = payload;
@@ -35,7 +36,7 @@ const admicRetive = async (payload: any, option: any) => {
 
   const whareCondition: Prisma.AdminWhereInput = { AND: serchArray };
   const result = await prisma.admin.findMany({
-    where: whareCondition,    
+    where: whareCondition,
     skip,
     take: limit,
     orderBy:
