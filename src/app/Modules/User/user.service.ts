@@ -1,4 +1,4 @@
-import { Prisma, UserRoll } from "@prisma/client";
+import { Prisma, UserRoll, UserStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
 import prisma from "../../shered/prisma";
 import { fileUploader } from "../../../helpers/fileUploader";
@@ -99,14 +99,15 @@ const getAlluserFromDb = async (payload: any, option: any) => {
   const { search, ...restData } = payload;
   const { limit, page, skip, sortBy, sortOrder } =
     helpers.calculatePaginationOption(option);
-  const searchAbleFeilds = ["email", "role", "status", "search"];
+  const searchAbleFeilds = ["email", "name"];
   const searchArray: Prisma.UserWhereInput[] = [];
   if (search) {
+    console.log(search);
     searchArray.push({
       OR: searchAbleFeilds.map((fl) => ({
         [fl]: {
-          constains: payload.search,
-          mode: "insencetive",
+          contains: payload.search,
+          mode: "insensitive",
         },
       })),
     });
@@ -114,12 +115,16 @@ const getAlluserFromDb = async (payload: any, option: any) => {
   if (Object.keys(restData).length > 0) {
     searchArray.push({
       AND: Object.keys(restData).map((key) => ({
-        [key]: restData[key],
+        [key]: {
+          equals: restData[key],
+        },
       })),
     });
   }
 
   const whereCondition: Prisma.UserWhereInput = { AND: searchArray };
+
+  console.dir(whereCondition, { depth: Infinity });
   const result = await prisma.user.findMany({
     where: whereCondition,
     skip,
@@ -132,6 +137,18 @@ const getAlluserFromDb = async (payload: any, option: any) => {
         : {
             createdAt: "desc",
           },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      createdAt: true,
+      needPasswrodChange: true,
+      updatedAt: true,
+      role: true,
+      admin: true,
+      patient: true,
+      doctor: true,
+    },
   });
   const totalPage = await prisma.user.count({
     where: whereCondition,
@@ -146,9 +163,114 @@ const getAlluserFromDb = async (payload: any, option: any) => {
   };
 };
 
+const updateStatus = async (id: string, data: { status: string }) => {
+  const isExitsUser = await prisma.user.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
+  const update = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      status: data.status as UserStatus,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  return update;
+};
+
+const getProfile = async (user: any) => {
+  const email = user?.email;
+  const matchUser = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: email,
+    },
+  });
+  let profile;
+  if (matchUser.role === UserRoll.SUPER_ADMIN) {
+    profile = await prisma.admin.findUnique({
+      where: {
+        email: matchUser.email,
+      },
+    });
+  } else if (matchUser.role === UserRoll.ADMIN) {
+    profile = await prisma.admin.findUnique({
+      where: {
+        email: matchUser.email,
+      },
+    });
+  } else if (matchUser.role === UserRoll.DOCTOR) {
+    profile = await prisma.doctor.findUnique({
+      where: {
+        email: matchUser.email,
+      },
+    });
+  } else if (matchUser.role === UserRoll.PATIENT) {
+    profile = await prisma.patient.findUnique({
+      where: {
+        email: matchUser.email,
+      },
+    });
+  }
+  return profile;
+};
+
+const updateMyProfifle = async (user: any, data: any) => {
+  const file = data.file;
+
+  if (file) {
+    const uploadeCloudinary = (await fileUploader.uploadTocloudinary(
+      file
+    )) as TClodnary;
+    data.body.profilePhoto = uploadeCloudinary?.secure_url;
+  }
+
+  const userExits = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user.email,
+    },
+  });
+  let updateProfile;
+  if (userExits.role === UserRoll.SUPER_ADMIN || UserRoll.ADMIN) {
+    updateProfile = await prisma.admin.update({
+      where: {
+        email: userExits.email,
+      },
+      data: data.body,
+    });
+  } else if (userExits.role === UserRoll.DOCTOR) {
+    updateProfile = await prisma.doctor.update({
+      where: {
+        email: userExits.email,
+      },
+      data: data.body,
+    });
+  } else if (userExits.role === UserRoll.PATIENT) {
+    updateProfile = await prisma.patient.update({
+      where: {
+        email: userExits.email,
+      },
+      data: data.body,
+    });
+  }
+  return updateProfile;
+};
+
 export const userService = {
   createAdmin,
   createDoctor,
   ceatePatient,
   getAlluserFromDb,
+  updateStatus,
+  getProfile,
+  updateMyProfifle,
 };

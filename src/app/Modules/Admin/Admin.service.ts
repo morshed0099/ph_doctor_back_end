@@ -35,7 +35,7 @@ const admicRetive = async (payload: any, option: any) => {
 
   const whareCondition: Prisma.AdminWhereInput = { AND: serchArray };
   const result = await prisma.admin.findMany({
-    where: whareCondition,
+    where: whareCondition,    
     skip,
     take: limit,
     orderBy:

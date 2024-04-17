@@ -6,6 +6,21 @@ import { fileUploader } from "../../../helpers/fileUploader";
 import { validationUser } from "./user.validation";
 
 const router = Router();
+router.get(
+  "/",
+  // authGurd(UserRoll.SUPER_ADMIN, UserRoll.ADMIN),
+  userControler.getAllUserFromDb
+);
+router.get(
+  "/me",
+  authGurd(
+    UserRoll.ADMIN,
+    UserRoll.SUPER_ADMIN,
+    UserRoll.PATIENT,
+    UserRoll.DOCTOR
+  ),
+  userControler.getProfile
+);
 
 router.post(
   "/create-admin",
@@ -39,6 +54,21 @@ router.post(
     return userControler.createPatient(req, res, next);
   }
 );
-router.get("/", userControler.getAllUserFromDb);
+router.patch(
+  "/update-my-profile",
+  authGurd(
+    UserRoll.ADMIN,
+    UserRoll.DOCTOR,
+    UserRoll.PATIENT,
+    UserRoll.SUPER_ADMIN
+  ),
+  fileUploader.upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    req.body = JSON.parse(req.body.data);
+    return userControler.updateMyProfile(req, res, next);
+  }
+);
+
+router.patch("/status/:id", userControler.updateStatus);
 
 export const userRouter = router;
